@@ -11,14 +11,14 @@
 
 package edu.cmu.sphinx.demo.transcriber;
 
-import java.io.InputStream;
-
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.StreamSpeechRecognizer;
-import edu.cmu.sphinx.decoder.adaptation.Stats;
-import edu.cmu.sphinx.decoder.adaptation.Transform;
 import edu.cmu.sphinx.result.WordResult;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A simple example that shows how to transcribe a continuous audio file that
@@ -45,13 +45,17 @@ public class TranscriberDemo {
 
         StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(
                 configuration);
+       /* InputStream stream = TranscriberDemo.class
+                .getResourceAsStream("/edu/cmu/sphinx/demo/aligner/10001-90210-01803.wav");*/
         InputStream stream = TranscriberDemo.class
-                .getResourceAsStream("/edu/cmu/sphinx/demo/aligner/10001-90210-01803.wav");
-        stream.skip(44);
+                .getResourceAsStream("/edu/cmu/sphinx/demo/speakerid/test.wav");
 
         // Simple recognition with generic model
         recognizer.startRecognition(stream);
         SpeechResult result;
+
+        List<WordResult> listWords = new ArrayList<>();
+
         while ((result = recognizer.getResult()) != null) {
 
             System.out.format("Hypothesis: %s\n", result.getHypothesis());
@@ -61,40 +65,13 @@ public class TranscriberDemo {
                 System.out.println(r);
             }
 
-            System.out.println("Best 3 hypothesis:");
-            for (String s : result.getNbest(3))
-                System.out.println(s);
-
+            listWords.addAll(result.getWords());
         }
         recognizer.stopRecognition();
 
-        // Live adaptation to speaker with speaker profiles
-
-        stream = TranscriberDemo.class
-                .getResourceAsStream("/edu/cmu/sphinx/demo/aligner/10001-90210-01803.wav");
-        stream.skip(44);
-
-        // Stats class is used to collect speaker-specific data
-        Stats stats = recognizer.createStats(1);
-        recognizer.startRecognition(stream);
-        while ((result = recognizer.getResult()) != null) {
-            stats.collect(result);
+        System.out.println("===========================================");
+        for (WordResult r : listWords) {
+            System.out.println(r);
         }
-        recognizer.stopRecognition();
-
-        // Transform represents the speech profile
-        Transform transform = stats.createTransform();
-        recognizer.setTransform(transform);
-
-        // Decode again with updated transform
-        stream = TranscriberDemo.class
-                .getResourceAsStream("/edu/cmu/sphinx/demo/aligner/10001-90210-01803.wav");
-        stream.skip(44);
-        recognizer.startRecognition(stream);
-        while ((result = recognizer.getResult()) != null) {
-            System.out.format("Hypothesis: %s\n", result.getHypothesis());
-        }
-        recognizer.stopRecognition();
-
     }
 }
